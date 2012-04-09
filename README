@@ -1,1 +1,5 @@
-This file was created by JetBrains PhpStorm 3.0.3 for binding GitHub repository
+A simple Content Element Gallery, based on the original gallery.
+
+Features
+- AJAX Reload
+- The Lightbox show every picture, even those from the other pages
