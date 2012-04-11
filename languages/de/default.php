@@ -21,10 +21,11 @@
  * Software Foundation website at <http://www.gnu.org/licenses/>.
  *
  * PHP version 5
- * @copyright  Oliver Lohoff
+ * @copyright  Oliver Lohoff 2012
  * @author     Oliver Lohoff <http://www.contao4you.de>
- * @package    Frontend
+ * @package
  * @license    LGPL
+ * @filesource
  */
 
 
