@@ -1,5 +1,5 @@
 <?php foreach ($this->ImagesPre as $image): ?>
-<a href="<?php echo $image['href']; ?>"<?php echo $image['attributes']; ?>></a>
+<a href="<?php echo $image['href']; ?>"<?php echo $image['attributes']; ?>></a><!--testtpl-->
 <?php endforeach; ?>
 
 <table>

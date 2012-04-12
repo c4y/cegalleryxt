@@ -76,6 +76,8 @@ class ContentGalleryXT extends ContentElement
 
     public function generateAjax()
     {
+        global $objPage;
+        define('TL_FILES_URL', ($objPage->staticFiles != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticFiles . TL_PATH . '/' : '');
     	$ajaxTemplate = new FrontendTemplate("ce_gallery_xt_ajax");
         $images = array();
       		$auxDate = array();
@@ -210,7 +212,7 @@ class ContentGalleryXT extends ContentElement
       		$rowcount = 0;
       		$colwidth = floor(100/$this->perRow);
       		$intMaxWidth = (TL_MODE == 'BE') ? floor((640 / $this->perRow)) : floor(($GLOBALS['TL_CONFIG']['maxImageWidth'] / $this->perRow));
-      		$strLightboxId = 'lightbox[lb' . $this->id . ']';
+            $strLightboxId = 'lightbox[lb' . $this->id . ']';
       		$body = array();
 
               // *************************
@@ -222,10 +224,8 @@ class ContentGalleryXT extends ContentElement
 
               for ($i=0; $i<$total; $i++)
               {
-                  // in 2.10 muss folgendes vor $this->urlEncode... voran gestellt werden
-                  // TL_FILES_URL .
                   $arrImg['href'] = $this->urlEncode($images[$i]['singleSRC']);
-                  $arrImg['attributes'] = ' rel="' . $strLightboxId . '"';
+                  $arrImg['attributes'] = $strLightboxId;
                   if ($i<$offset)
                   {
                       $arrImgPre[] = $arrImg;
@@ -465,7 +465,7 @@ class ContentGalleryXT extends ContentElement
 		$rowcount = 0;
 		$colwidth = floor(100/$this->perRow);
 		$intMaxWidth = (TL_MODE == 'BE') ? floor((640 / $this->perRow)) : floor(($GLOBALS['TL_CONFIG']['maxImageWidth'] / $this->perRow));
-		$strLightboxId = 'lightbox[lb' . $this->id . ']';
+        $strLightboxId = 'lightbox[lb' . $this->id . ']';
 		$body = array();
 
         // *************************
@@ -477,10 +477,15 @@ class ContentGalleryXT extends ContentElement
 
         for ($i=0; $i<$total; $i++)
         {
-            // in 2.10 muss folgendes vor $this->urlEncode... voran gestellt werden
-            // TL_FILES_URL .
-            $arrImg['href'] = $this->urlEncode($images[$i]['singleSRC']);
-            $arrImg['attributes'] = ' rel="' . $strLightboxId . '"';
+            $arrImg['href'] = TL_FILES_URL . $this->urlEncode($images[$i]['singleSRC']);
+            if (!empty($GLOBALS['TL_CONFIG']['latestVersion']) && version_compare(VERSION . '.' . BUILD, 2.11, '<'))
+            {
+                $arrImg['attributes'] = 'lightbox[lb' . $this->id . ']"';
+            }
+            else
+            {
+                $arrImg['attributes'] = 'data-lightbox="lb' . $this->id . '"';
+            }
             if ($i<$offset)
             {
                 $arrImgPre[] = $arrImg;
