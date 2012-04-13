@@ -258,6 +258,7 @@ class ContentGalleryXT extends ContentElement
                   {
                       $arrImg['attributes'] = 'data-lightbox="lb' . $this->id . '"';
                   }
+                  $arrImg['alt'] = $images[$i]['alt'];
                   if ($i<$offset)
                   {
                       $arrImgPre[] = $arrImg;
@@ -519,6 +520,7 @@ class ContentGalleryXT extends ContentElement
             {
                 $arrImg['attributes'] = 'data-lightbox="lb' . $this->id . '"';
             }
+            $arrImg['alt'] = $images[$i]['alt'];
             if ($i<$offset)
             {
                 $arrImgPre[] = $arrImg;
