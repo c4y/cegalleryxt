@@ -74,9 +74,34 @@ class ContentGalleryXT extends ContentElement
 		return parent::generate();
 	}
 
+    protected function getPageLayout($intId)
+    {
+        $objLayout = $this->Database->prepare("SELECT l.*, t.templates FROM tl_layout l LEFT JOIN tl_theme t ON l.pid=t.id WHERE l.id=? OR l.fallback=1 ORDER BY l.id=? DESC")
+                                    ->limit(1)
+                                    ->execute($intId, $intId);
+
+        // Die if there is no layout at all
+        if ($objLayout->numRows < 1)
+        {
+            header('HTTP/1.1 501 Not Implemented');
+            $this->log('Could not find layout ID "' . $intId . '"', 'PageRegular getPageLayout()', TL_ERROR);
+            die('No layout specified');
+        }
+
+        return $objLayout;
+    }
+
     public function generateAjax()
     {
+        // es wird das Output-Format benötigt
+        $objDB = $this->Database->prepare('SELECT * FROM tl_page WHERE id = (SELECT pid FROM tl_article WHERE id=?)')->execute($this->pid);
         global $objPage;
+        $objPage = (object) $objDB->fetchAssoc();
+        $objLayout = $this->getPageLayout($objPage->layout);
+        list($strFormat, $strVariant) = explode('_', $objLayout->doctype);
+        $objPage->outputFormat = $strFormat;
+        $objPage->outputVariant = $strVariant;
+
         define('TL_FILES_URL', ($objPage->staticFiles != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticFiles . TL_PATH . '/' : '');
     	$ajaxTemplate = new FrontendTemplate("ce_gallery_xt_ajax");
         $images = array();
@@ -225,7 +250,14 @@ class ContentGalleryXT extends ContentElement
               for ($i=0; $i<$total; $i++)
               {
                   $arrImg['href'] = $this->urlEncode($images[$i]['singleSRC']);
-                  $arrImg['attributes'] = $strLightboxId;
+                  if (!empty($GLOBALS['TL_CONFIG']['latestVersion']) && version_compare(VERSION . '.' . BUILD, 2.11, '<') || $objPage->outputFormat == 'xhtml')
+                  {
+                      $arrImg['attributes'] = 'rel="lightbox[lb' . $this->id . ']"';
+                  }
+                  else
+                  {
+                      $arrImg['attributes'] = 'data-lightbox="lb' . $this->id . '"';
+                  }
                   if ($i<$offset)
                   {
                       $arrImgPre[] = $arrImg;
@@ -335,6 +367,7 @@ class ContentGalleryXT extends ContentElement
 	{
 		$images = array();
 		$auxDate = array();
+        global $objPage;
 
 		// Get all images
 		foreach ($this->multiSRC as $file)
@@ -478,9 +511,9 @@ class ContentGalleryXT extends ContentElement
         for ($i=0; $i<$total; $i++)
         {
             $arrImg['href'] = TL_FILES_URL . $this->urlEncode($images[$i]['singleSRC']);
-            if (!empty($GLOBALS['TL_CONFIG']['latestVersion']) && version_compare(VERSION . '.' . BUILD, 2.11, '<'))
+            if (!empty($GLOBALS['TL_CONFIG']['latestVersion']) && version_compare(VERSION . '.' . BUILD, 2.11, '<') || $objPage->outputFormat == 'xhtml')
             {
-                $arrImg['attributes'] = 'lightbox[lb' . $this->id . ']"';
+                $arrImg['attributes'] = 'rel="lightbox[lb' . $this->id . ']"';
             }
             else
             {
