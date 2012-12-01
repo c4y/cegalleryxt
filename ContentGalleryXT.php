@@ -36,7 +36,7 @@
  * @author     Leo Feyer <http://contao.org>
  * @package    Core
  */
-class ContentGalleryXTneu extends \ContentElement
+class ContentGalleryXT extends \ContentElement
 {
 
 	/**

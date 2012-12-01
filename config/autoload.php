@@ -32,7 +32,7 @@
  */
 ClassLoader::addClasses(array
 (
-	'ContentGalleryXT' => 'system/modules/cegalleryxt/ContentGalleryXTneu.php',
+	'ContentGalleryXT' => 'system/modules/cegalleryxt/ContentGalleryXT.php',
 ));
 
 
