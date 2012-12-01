@@ -2,15 +2,11 @@
 <a href="<?php echo $image['href']; ?>" title="<?php echo $image['alt']; ?>" <?php echo $image['attributes']; ?>></a>
 <?php endforeach; ?>
 
-<table>
-<tbody>
+<ul>
 <?php foreach ($this->body as $class=>$row): ?>
-<tr class="<?php echo $class; ?>">
 <?php foreach ($row as $col): ?>
-<?php if (!$col->addImage): ?>
-  <td class="<?php echo $col->class; ?> empty">&nbsp;</td>
-<?php else: ?>
-  <td class="<?php echo $col->class; ?>" style="width:<?php echo $col->colWidth; ?>;">
+<?php if ($col->addImage): ?>
+  <li class="<?php echo $col->class; ?>">
   <div class="image_container"<?php if ($col->margin): ?> style="<?php echo $col->margin; ?>"<?php endif; ?>>
 <?php if ($col->href): ?>
     <a href="<?php echo $col->href; ?>"<?php echo $col->attributes; ?> title="<?php echo $col->alt; ?>"><img src="<?php echo $col->src; ?>"<?php echo $col->imgSize; ?> alt="<?php echo $col->alt; ?>" /></a>
@@ -18,16 +14,16 @@
     <img src="<?php echo $col->src; ?>"<?php echo $col->imgSize; ?> alt="<?php echo $col->alt; ?>" />
 <?php endif; ?>
 <?php if ($col->caption): ?>
-    <div class="caption"><?php echo $col->caption; ?></div>
+    <div class="caption" style="width:<?php echo $col->arrSize[0]; ?>px"><?php echo $col->caption; ?></div>
 <?php endif; ?>
   </div>
-  </td>
+  </li>
 <?php endif; ?>
 <?php endforeach; ?>
-</tr>
 <?php endforeach; ?>
-</tbody>
-</table>
+</ul>
+
+
 
 
 <?php foreach ($this->ImagesPost as $image): ?>
@@ -36,27 +32,32 @@
 
 
 <script type="text/javascript">
-<?php if (!empty($GLOBALS['TL_CONFIG']['latestVersion']) && version_compare(VERSION . '.' . BUILD, 2.10, '<')) : ?>
-window.addEvent('domready', function(){
-   document.getElements('#cgxt_<?php echo $this->id; ?> .pagination a').addEvent('click', function(event){
-          event.preventDefault();
-          var page = event.target.get('href').match('page=[0-9]*')
-          new Request.HTML({
-                  method:'get',
-                  data:'g=1&action=cte&id=<?php echo $this->id; ?>&' + page,
-                  url:'ajax.php',
-                  update: $('cgxt_<?php echo $this->id; ?>'),
-                  onComplete: Mediabox.scanPage()
-              }).send();
-          return false;
-      });
-});
-<?php else: ?>
+
+function cgxtScanPage($) {
+
+    var links = $$('a').filter(function(el) {
+      return el.getAttribute('data-lightbox') != null;
+    });
+    $$(links).mediabox({
+      // Put custom options here
+    }, function(el) {
+  	  return [el.href, el.title, el.getAttribute('data-lightbox')];
+    }, function(el) {
+      var data = this.getAttribute('data-lightbox').split(' ');
+      return (this == el) || el.getAttribute('data-lightbox').match(data[0]);
+    });
+    // Support swiping on mobile devices
+    $('mbImage').addEvent('swipe', function(e) {
+      (e.direction == 'left') ? $('mbNextLink').fireEvent('click') : $('mbPrevLink').fireEvent('click');
+    });
+ };
+
+
 function cgxtAddEvents()
 {
     document.getElements('#cgxt_<?php echo $this->id; ?> .pagination a').addEvent('click', function(event){
           event.preventDefault();
-          var page = event.target.get('href').match('page=[0-9]*')
+          var page = event.target.get('href').match('page_.*=[0-9]*');
           new Request.JSON({
                   method:'get',
                   data:'action=cte&id=<?php echo $this->id; ?>&' + page,
@@ -64,7 +65,7 @@ function cgxtAddEvents()
                   onComplete: function(responseText)
                       {
                           $('cgxt_<?php echo $this->id; ?>').set('html', responseText.content);
-                          Mediabox.scanPage();
+                          cgxtScanPage(document.id);
                           cgxtAddEvents();
                       }
               }).send();
@@ -74,5 +75,4 @@ function cgxtAddEvents()
 window.addEvent('domready', function(){
    cgxtAddEvents();
 });
-<?php endif; ?>
 </script>

@@ -1,4 +1,4 @@
-<?php if (!defined('TL_ROOT')) die('You can not access this file directly!');
+<?php
 
 /**
  * TYPOlight webCMS
@@ -27,4 +27,21 @@
  */
 
 
-$GLOBALS['TL_DCA']['tl_content']['palettes']['cegalleryxt'] = $GLOBALS['TL_DCA']['tl_content']['palettes']['gallery'];
+/**
+ * Register the classes
+ */
+ClassLoader::addClasses(array
+(
+	'ContentGalleryXT' => 'system/modules/cegalleryxt/ContentGalleryXTneu.php',
+));
+
+
+/**
+ * Register the templates
+ */
+TemplateLoader::addFiles(array
+(
+	'ce_gallery_xt'      => 'system/modules/cegalleryxt/templates',
+	'ce_gallery_xt_ajax' => 'system/modules/cegalleryxt/templates',
+	'gallery_default_xt' => 'system/modules/cegalleryxt/templates',
+));
