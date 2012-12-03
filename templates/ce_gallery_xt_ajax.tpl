@@ -1,3 +1,0 @@
-
-<?php echo $this->images; ?>
-<?php echo $this->pagination; ?>
