@@ -27,7 +27,6 @@
  */
 
 
-
 /**
  * Class ContentGallery
  *
@@ -36,6 +35,7 @@
  * @author     Leo Feyer <http://contao.org>
  * @package    Core
  */
+ 
 class ContentGalleryXT extends \ContentElement
 {
 
@@ -51,7 +51,6 @@ class ContentGalleryXT extends \ContentElement
 	 */
 	protected $strTemplate = 'ce_gallery_xt';
 
-
 	/**
 	 * Return if there are no files
 	 * @return string
@@ -63,6 +62,7 @@ class ContentGalleryXT extends \ContentElement
 		{
 			$this->import('FrontendUser', 'User');
 
+			#if ($this->User->assignDir && $this->User->homeDir)
 			if ($this->User->assignDir && is_dir(TL_ROOT . '/' . $this->User->homeDir))
 			{
 				$this->multiSRC = array($this->User->homeDir);
@@ -79,17 +79,16 @@ class ContentGalleryXT extends \ContentElement
 			return '';
 		}
 
-		// Check for version 3 format
-		if (!is_numeric($this->multiSRC[0]))
-		{
-			return '<p class="error">'.$GLOBALS['TL_LANG']['ERR']['version2format'].'</p>';
-		}
-
 		// Get the file entries from the database
-		$this->objFiles = \FilesModel::findMultipleByIds($this->multiSRC);
+		$this->objFiles = \FilesModel::findMultipleByUuids($this->multiSRC);
 
 		if ($this->objFiles === null)
 		{
+			if (!\Validator::isUuid($this->multiSRC[0]))
+			{
+				return '<p class="error">'.$GLOBALS['TL_LANG']['ERR']['version2format'].'</p>';
+			}
+
 			return '';
 		}
 
@@ -106,14 +105,14 @@ class ContentGalleryXT extends \ContentElement
 
 		$images = array();
 		$auxDate = array();
-		$auxId = array();
+		$objFiles = $this->objFiles;
 
         define('TL_FILES_URL', ($objPage->staticFiles != '' && !$GLOBALS['TL_CONFIG']['debugMode']) ? $objPage->staticFiles . TL_PATH . '/' : '');
 
         $ajaxTemplate = new FrontendTemplate("ce_gallery_xt_ajax");
 
         $this->multiSRC = deserialize($this->multiSRC);
-        $this->objFiles = \FilesModel::findMultipleByIds($this->multiSRC);
+        $this->objFiles = \FilesModel::findMultipleByUuids($this->multiSRC);
 
 		$objFiles = $this->objFiles;
 
@@ -148,6 +147,7 @@ class ContentGalleryXT extends \ContentElement
 				$images[$objFiles->path] = array
 				(
 					'id'        => $objFiles->id,
+					'uuid'      => $objFiles->uuid,
 					'name'      => $objFile->basename,
 					'singleSRC' => $objFiles->path,
 					'alt'       => $arrMeta['title'],
@@ -156,13 +156,12 @@ class ContentGalleryXT extends \ContentElement
 				);
 
 				$auxDate[] = $objFile->mtime;
-				$auxId[] = $objFiles->id;
 			}
 
 			// Folders
 			else
 			{
-				$objSubfiles = \FilesModel::findByPid($objFiles->id);
+				$objSubfiles = \FilesModel::findByPid($objFiles->uuid);
 
 				if ($objSubfiles === null)
 				{
@@ -196,6 +195,7 @@ class ContentGalleryXT extends \ContentElement
 					$images[$objSubfiles->path] = array
 					(
 						'id'        => $objSubfiles->id,
+						'uuid'      => $objSubfiles->uuid,
 						'name'      => $objFile->basename,
 						'singleSRC' => $objSubfiles->path,
 						'alt'       => $arrMeta['title'],
@@ -204,7 +204,6 @@ class ContentGalleryXT extends \ContentElement
 					);
 
 					$auxDate[] = $objFile->mtime;
-					$auxId[] = $objSubfiles->id;
 				}
 			}
 		}
@@ -239,9 +238,9 @@ class ContentGalleryXT extends \ContentElement
 					// Move the matching elements to their position in $arrOrder
 					foreach ($images as $k=>$v)
 					{
-						if (isset($arrOrder[$v['id']]))
+						if (array_key_exists($v['uuid'], $arrOrder))
 						{
-							$arrOrder[$v['id']] = $v;
+							$arrOrder[$v['uuid']] = $v;
 							unset($images[$k]);
 						}
 					}
@@ -432,7 +431,6 @@ class ContentGalleryXT extends \ContentElement
 
 		$images = array();
 		$auxDate = array();
-		$auxId = array();
 		$objFiles = $this->objFiles;
 
 		// Get all images
@@ -466,6 +464,7 @@ class ContentGalleryXT extends \ContentElement
 				$images[$objFiles->path] = array
 				(
 					'id'        => $objFiles->id,
+					'uuid'      => $objFiles->uuid,
 					'name'      => $objFile->basename,
 					'singleSRC' => $objFiles->path,
 					'alt'       => $arrMeta['title'],
@@ -474,13 +473,12 @@ class ContentGalleryXT extends \ContentElement
 				);
 
 				$auxDate[] = $objFile->mtime;
-				$auxId[] = $objFiles->id;
 			}
 
 			// Folders
 			else
 			{
-				$objSubfiles = \FilesModel::findByPid($objFiles->id);
+				$objSubfiles = \FilesModel::findByPid($objFiles->uuid);
 
 				if ($objSubfiles === null)
 				{
@@ -514,6 +512,7 @@ class ContentGalleryXT extends \ContentElement
 					$images[$objSubfiles->path] = array
 					(
 						'id'        => $objSubfiles->id,
+						'uuid'      => $objSubfiles->uuid,
 						'name'      => $objFile->basename,
 						'singleSRC' => $objSubfiles->path,
 						'alt'       => $arrMeta['title'],
@@ -522,7 +521,6 @@ class ContentGalleryXT extends \ContentElement
 					);
 
 					$auxDate[] = $objFile->mtime;
-					$auxId[] = $objSubfiles->id;
 				}
 			}
 		}
@@ -551,36 +549,33 @@ class ContentGalleryXT extends \ContentElement
 			case 'custom':
 				if ($this->orderSRC != '')
 				{
-					// Turn the order string into an array
-					$arrOrder = array_flip(array_map('intval', explode(',', $this->orderSRC)));
+					$tmp = deserialize($this->orderSRC);
 
-					// Move the matching elements to their position in $arrOrder
-					foreach ($images as $k=>$v)
+					if (!empty($tmp) && is_array($tmp))
 					{
-						if (isset($arrOrder[$v['id']]))
+						// Remove all values
+						$arrOrder = array_map(function(){}, array_flip($tmp));
+
+						// Move the matching elements to their position in $arrOrder
+						foreach ($images as $k=>$v)
 						{
-							$arrOrder[$v['id']] = $v;
-							unset($images[$k]);
+							if (array_key_exists($v['uuid'], $arrOrder))
+							{
+								$arrOrder[$v['uuid']] = $v;
+								unset($images[$k]);
+							}
 						}
-					}
 
-					// Append the left-over images at the end
-					if (!empty($images))
-					{
-						$arrOrder = array_merge($arrOrder, $images);
-					}
-
-					// Remove empty or numeric (not replaced) entries
-					foreach ($arrOrder as $k=>$v)
-					{
-						if ($v == '' || is_numeric($v))
+						// Append the left-over images at the end
+						if (!empty($images))
 						{
-							unset($arrOrder[$k]);
+							$arrOrder = array_merge($arrOrder, array_values($images));
 						}
-					}
 
-					$images = $arrOrder;
-					unset($arrOrder);
+						// Remove empty (unreplaced) entries
+						$images = array_values(array_filter($arrOrder));
+						unset($arrOrder);
+					}
 				}
 				break;
 
@@ -624,7 +619,7 @@ class ContentGalleryXT extends \ContentElement
 			$offset = ($page - 1) * $this->perPage;
 			$limit = min($this->perPage + $offset, $total);
 
-			$objPagination = new \Pagination($total, $this->perPage, 7, $id);
+			$objPagination = new \Pagination($total, $this->perPage, $GLOBALS['TL_CONFIG']['maxPaginationLinks'], $id);
 			$this->Template->pagination = $objPagination->generate("\n  ");
 		}
 
@@ -701,6 +696,7 @@ class ContentGalleryXT extends \ContentElement
 				// Empty cell
 				if (!is_array($images[($i+$j)]) || ($j+$i) >= $limit)
 				{
+					#$objCell->colWidth = $colwidth . '%';
 					$objCell->class = 'col_'.$j . $class_td;
 				}
 				else
@@ -736,7 +732,7 @@ class ContentGalleryXT extends \ContentElement
 
 		$objTemplate->body = $body;
 		$objTemplate->headline = $this->headline; // see #1603
-
+		
         $objTemplate->ImagesPre = $arrImgPre;
         $objTemplate->ImagesPost = $arrImgPost;
 

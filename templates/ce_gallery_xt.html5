@@ -3,7 +3,7 @@
 
 <<?php echo $this->hl; ?>><?php echo $this->headline; ?></<?php echo $this->hl; ?>>
 <?php endif; ?>
-<div id="cgxt_<?php echo $this->id; ?>">
+<div class="ce_gallery block" id="cgxt_<?php echo $this->id; ?>">
 <?php echo $this->images; ?>
 <?php echo $this->pagination; ?>
 </div>

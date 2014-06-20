@@ -26,5 +26,5 @@
  * @filesource
  */
 
-
+$GLOBALS['TL_DCA']['tl_content']['fields']['multiSRC']['eval']['isGallery'] = true;
 $GLOBALS['TL_DCA']['tl_content']['palettes']['cegalleryxt'] = $GLOBALS['TL_DCA']['tl_content']['palettes']['gallery'];

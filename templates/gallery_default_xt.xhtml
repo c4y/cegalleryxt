@@ -31,43 +31,47 @@
 <?php endforeach; ?>
 
 <script type="text/javascript">
-<?php if (!empty($GLOBALS['TL_CONFIG']['latestVersion']) && version_compare(VERSION . '.' . BUILD, 2.10, '<')) : ?>
-window.addEvent('domready', function(){
-   document.getElements('#cgxt_<?php echo $this->id; ?> .pagination a').addEvent('click', function(event){
-          event.preventDefault();
-          var page = event.target.get('href').match('page=[0-9]*')
-          new Request.HTML({
-                  method:'get',
-                  data:'g=1&action=cte&id=<?php echo $this->id; ?>&' + page,
-                  url:'ajax.php',
-                  update: $('cgxt_<?php echo $this->id; ?>'),
-                  onComplete: Mediabox.scanPage()
-              }).send();
-          return false;
+(function($) {
+
+  function cgxtScanPage($) {
+      var links = $$('a').filter(function(el) {
+        return el.getAttribute('data-lightbox') != null;
       });
-});
-<?php else: ?>
-function cgxtAddEvents()
-{
-    document.getElements('#cgxt_<?php echo $this->id; ?> .pagination a').addEvent('click', function(event){
-          event.preventDefault();
-          var page = event.target.get('href').match('page=[0-9]*')
-          new Request.JSON({
-                  method:'get',
-                  data:'action=cte&id=<?php echo $this->id; ?>&' + page,
-                  url:'ajax.php',
-                  onComplete: function(responseText)
-                      {
-                          $('cgxt_<?php echo $this->id; ?>').set('html', responseText.content);
-                          Mediabox.scanPage();
-                          cgxtAddEvents();
-                      }
-              }).send();
-          return false;
-     });
-}
-window.addEvent('domready', function(){
-   cgxtAddEvents();
-});
-<?php endif; ?>
+      $$(links).mediabox({
+        // Put custom options here
+      }, function(el) {
+        return [el.href, el.title, el.getAttribute('data-lightbox')];
+      }, function(el) {
+        var data = this.getAttribute('data-lightbox').split(' ');
+        return (this == el) || el.getAttribute('data-lightbox').match(data[0]);
+      });
+      // Support swiping on mobile devices
+      $('mbImage').addEvent('swipe', function(e) {
+        (e.direction == 'left') ? $('mbNextLink').fireEvent('click') : $('mbPrevLink').fireEvent('click');
+      });
+   };
+
+  function cgxtAddEvents()
+  {
+      document.getElements('#cgxt_<?php echo $this->id; ?> .pagination a').addEvent('click', function(event){
+            event.preventDefault();
+            var page = event.target.get('href').match('page_.*=[0-9]*')
+            new Request.JSON({
+                    method:'get',
+                    data:'action=cte&id=<?php echo $this->id; ?>&' + page,
+                    url:'ajax.php',
+                    onComplete: function(responseText)
+                        {
+                            $('cgxt_<?php echo $this->id; ?>').set('html', responseText.content);
+                            cgxtScanPage(document.id);
+                            cgxtAddEvents();
+                        }
+                }).send();
+            return false;
+       });
+  }
+  window.addEvent('domready', function(){
+     cgxtAddEvents();
+  });
+})(document.id);
 </script>
